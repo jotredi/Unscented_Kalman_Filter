@@ -63,7 +63,7 @@ Lidar updates are performed using normal Kalman Filter equations because lidar m
 
 Radar measurement model is not linear so when a radar measurement arrives, the predicted sigma points are passed through the measurement model and compared to the received measurements to update the state of the vehicle.
 
-The complete UKF implementation can be found in `ukf.cpp`.
+The complete UKF implementation can be found in `./src/ukf.cpp`.
 
 ## Consistency of the filter
 
@@ -71,7 +71,7 @@ The consistency of a filter measures if a Kalman filter’s noise assumptions ar
 
 If the measurement noise parameters in a Kalman filter are too small relative to the actual noise, the filter gives too much weight to measurements relative to the process model, underestimating the measurements. On the other hand, if the noise parameter is too large relative to the actual noise, the filter overestimates the measurements.
 
-The INS follows the chi-squared distribution. For example, in radar measurements, statistically 5 % of the cases, the INS will be higher than 7.8 (following chi-squared table). The following graph shows the INS obtained for radar measurements with respect to time:
+The NIS follows the chi-squared distribution. For example, in radar measurements, statistically 5 % of the cases, the NIS will be higher than 7.8 (following chi-squared table). The following graph shows the NIS obtained for radar measurements with respect to time:
 
 <img src="media/NIS.png" />
 
