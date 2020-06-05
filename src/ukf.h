@@ -4,6 +4,9 @@
 #include "Eigen/Dense"
 #include "measurement_package.h"
 
+// Wrap angle to pi
+inline double wrapPI (double angle);
+
 class UKF {
  public:
   /**
@@ -54,14 +57,23 @@ class UKF {
   // state vector: [pos1 pos2 vel_abs yaw_angle yaw_rate] in SI units and rad
   Eigen::VectorXd x_;
 
+  // state augmented vector
+  Eigen::VectorXd x_aug_;
+
   // state covariance matrix
   Eigen::MatrixXd P_;
+
+  // augmented state covariance matrix
+  Eigen::MatrixXd P_aug_;
+
+  // sigma points matrix
+  Eigen::MatrixXd Xsig_;
 
   // predicted sigma points matrix
   Eigen::MatrixXd Xsig_pred_;
 
-  // time when the state is true, in us
-  long long time_us_;
+  // previous timestamp, in us
+  long long previous_timestamp_;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   double std_a_;
@@ -95,6 +107,16 @@ class UKF {
 
   // Sigma point spreading parameter
   double lambda_;
+
+  // Measurement matrix H - lidar
+  Eigen::MatrixXd H_lidar_;
+
+  // Measurement noise covariance matrix R - lidar
+  Eigen::MatrixXd R_lidar_;
+
+  // Measurement noise covariance matrix R - radar
+  Eigen::MatrixXd R_radar_;
+
 };
 
 #endif  // UKF_H

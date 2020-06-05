@@ -1,34 +1,17 @@
-# SFND_Unscented_Kalman_Filter
-Sensor Fusion UKF Highway Project Starter Code
+# Unscented_Kalman_Filter
+
+In this project, I implement an Unscented Kalman Filter to estimate the state of multiple cars on a highway using noisy lidar and radar measurements.
 
 <img src="media/ukf_highway_tracked.gif" width="700" height="400" />
 
-In this project you will implement an Unscented Kalman Filter to estimate the state of multiple cars on a highway using noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower that the tolerance outlined in the project rubric. 
+The ego vehicle (green) is driving on a highway and estimating position, velocity, orientation and turning rate of other three vehicles (blue) on the road. The traffic cars will be accelerating and altering their steering to change lanes. Each of the traffic cars has
+its own UKF object generated for it, and they are being updated every time step.
 
-The main program can be built and ran by doing the following from the project top directory.
-
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./ukf_highway
-
-Note that the programs that need to be written to accomplish the project are src/ukf.cpp, and src/ukf.h
-
-The program main.cpp has already been filled out, but feel free to modify it.
-
-<img src="media/ukf_highway.png" width="700" height="400" />
-
-`main.cpp` is using `highway.h` to create a straight 3 lane highway environment with 3 traffic cars and the main ego car at the center. 
-The viewer scene is centered around the ego car and the coordinate system is relative to the ego car as well. The ego car is green while the 
-other traffic cars are blue. The traffic cars will be accelerating and altering their steering to change lanes. Each of the traffic car's has
-it's own UKF object generated for it, and will update each indidual one during every time step. 
-
-The red spheres above cars represent the (x,y) lidar detection and the purple lines show the radar measurements with the velocity magnitude along the detected angle. The Z axis is not taken into account for tracking, so you are only tracking along the X/Y axis.
+The red spheres above cars represent the (x,y) lidar detection and the purple lines show the radar measurements with the velocity magnitude along the detected angle.
 
 ---
 
-## Other Important Dependencies
+### Important Dependencies
 * cmake >= 3.5
   * All OSes: [click here for installation instructions](https://cmake.org/install/)
 * make >= 4.1 (Linux, Mac), 3.81 (Windows)
@@ -39,38 +22,63 @@ The red spheres above cars represent the (x,y) lidar detection and the purple li
   * Linux: gcc / g++ is installed by default on most Linux distros
   * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
   * Windows: recommend using [MinGW](http://www.mingw.org/)
- * PCL 1.2
+* PCL 1.2
 
-## Basic Build Instructions
+### Basic Build Instructions
 
 1. Clone this repo.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./ukf_highway`
 
-## Editor Settings
+---
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+## Unscented Kalman Filter
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+The Unscented Kalman Filter is an extension to the basic Kalman Filter for non-linear systems. It was invented by a group of graduate students who thought the Extended Kalman Filter "stinks" (it is "unscented") because of the poor approximation that the EKF makes for highly non-linear systems.
 
-## Code Style
+In contrast to the EKF, the Unscented Kalman filter takes samples (sigma points) from the Gaussian distribution and pass them through the non-linear (process or measurement) model instead of linearizing it using Jacobians.
 
-Please stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html) as much as possible.
+## Motion Model
 
-## Generating Additional Data
+The motion model used in this project is the Constant Turn Rate and Velocity magnitude model (CTRV).
 
-This is optional!
+<img src="media/CTRV.png" height="444" />
 
-If you'd like to generate your own radar and lidar modify the code in `highway.h` to alter the cars. Also check out `tools.cpp` to
-change how measurements are taken, for instance lidar markers could be the (x,y) center of bounding boxes by scanning the PCD environment
-and performing clustering. This is similar to what was done in Sensor Fusion Lidar Obstacle Detection.
+This model assumes that objects can move straight with constant velocity and turn with a constant turn rate.
 
-## Project Instructions and Rubric
+This model is not linear so we need to perform the prediction step in the following way:
 
-This information is only accessible by people who are already enrolled in Sensor Fusion. 
-If you are enrolled, see the project page in the classroom
-for instructions and the project rubric.
+* Generate sigma points.
+* Predict sigma points using the CTRV model.
+* Calculate predicted Mean and Covariance from the sigma points.
+
+## Measurement Model
+
+#### Lidar Update
+
+Lidar updates are performed using normal Kalman Filter equations because lidar measurements in this project give the position (px, py) directly, so it is therefore a linear model and we can update the state using this measurements and the corresponding laser measurement noise.
+
+#### Radar Update
+
+Radar measurement model is not linear so when a radar measurement arrives, the predicted sigma points are passed through the measurement model and compared to the received measurements to update the state of the vehicle.
+
+The complete UKF implementation can be found in `ukf.cpp`.
+
+## Consistency of the filter
+
+The consistency of a filter measures if a Kalman filter’s noise assumptions are consistent with realized measurements. For this, the Normalized Innovation Squared (NIS) is used.
+
+If the measurement noise parameters in a Kalman filter are too small relative to the actual noise, the filter gives too much weight to measurements relative to the process model, underestimating the measurements. On the other hand, if the noise parameter is too large relative to the actual noise, the filter overestimates the measurements.
+
+The INS follows the chi-squared distribution. For example, in radar measurements, statistically 5 % of the cases, the INS will be higher than 7.8 (following chi-squared table). The following graph shows the INS obtained for radar measurements with respect to time:
+
+<img src="media/NIS.png" />
+
+We should expect the NIS to surpass the red line around 5 % of the cases.
+* If the NIS goes above this line too many times, the filter is underestimating the measurements so we should increase the noise variance.
+* If the NIS is very low to this threshold and never goes above it, the filter is overestimating the measurements and we should decrease the noise variance.
+
+## Reference
+* https://www.seas.harvard.edu/courses/cs281/papers/unscented.pdf
+* https://tutcris.tut.fi/portal/files/3250626/KFconsistency2015.pdf
